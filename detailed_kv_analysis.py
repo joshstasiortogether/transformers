@@ -396,6 +396,23 @@ class DetailedKVAnalysis:
             )
             
             # Print summary
+            print("\n=== LAYER-BY-LAYER ANALYSIS ===")
+            for layer_idx in range(self.num_layers):
+                if layer_idx in analysis_results["layer_analysis"]:
+                    layer_data = analysis_results["layer_analysis"][layer_idx]
+                    print(f"\nLayer {layer_idx}:")
+                    
+                    for bits in [2, 4, 8]:
+                        if bits in layer_data["key_errors"] and bits in layer_data["value_errors"]:
+                            key_mse = layer_data["key_errors"][bits]["mse"]
+                            key_mae = layer_data["key_errors"][bits]["mae"]
+                            value_mse = layer_data["value_errors"][bits]["mse"]
+                            value_mae = layer_data["value_errors"][bits]["mae"]
+                            
+                            print(f"  {bits}-bit quantization:")
+                            print(f"    Key MSE: {key_mse:.8f}, MAE: {key_mae:.8f}")
+                            print(f"    Value MSE: {value_mse:.8f}, MAE: {value_mae:.8f}")
+            
             print("\n=== SUMMARY ===")
             for bits in [2, 4, 8]:
                 stats = analysis_results["summary_stats"][f"{bits}bit"]
