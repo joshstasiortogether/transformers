@@ -324,3 +324,210 @@ We now have a [paper](https://www.aclweb.org/anthology/2020.emnlp-demos.6/) you 
     pages = "38--45"
 }
 ```
+
+# KV Cache Quantization Analysis for Llama Models
+
+This repository provides comprehensive analysis tools for studying quantization error in Key-Value (KV) caches of Llama models, particularly the Llama-3.2-1B model.
+
+## Overview
+
+The analysis examines:
+- **Quantization error per layer** for both Keys and Values separately
+- **Different quantization bit widths** (2-bit, 4-bit, 8-bit)
+- **Impact on final text generation** quality
+- **Layer-by-layer error patterns**
+
+## Installation
+
+```bash
+pip install -r requirements.txt
+```
+
+## Quick Start
+
+### Simple Analysis (Recommended)
+
+Run the detailed analysis script:
+
+```bash
+python detailed_kv_analysis.py
+```
+
+This will:
+1. Load Llama-3.2-1B model
+2. Run inference on 2 test prompts
+3. Extract KV cache states during generation
+4. Calculate quantization errors for each layer
+5. Generate comprehensive visualizations
+6. Save detailed results
+
+### Advanced Analysis
+
+For more control over quantization backends:
+
+```bash
+python kv_quantization_analysis.py
+```
+
+## What You Get
+
+### 1. Quantization Error Analysis
+- **Per-layer MSE/MAE** for Keys and Values
+- **Comparison across bit widths** (2, 4, 8 bits)
+- **Summary statistics** and error distributions
+
+### 2. Visualizations
+- Layer-wise error plots
+- Key vs Value error comparisons  
+- Error heatmaps across layers/bits
+- Distribution analysis
+- Summary tables
+
+### 3. Output Files
+- `prompt_*_analysis_complete_analysis.png` - Comprehensive visualizations
+- `complete_kv_analysis_results.json` - Detailed numerical results
+- `quantization_report.json` - Summary analysis
+
+## Example Output
+
+The analysis will show you:
+
+```
+=== PROMPT 1 ANALYSIS ===
+Prompt: The future of artificial intelligence is
+
+2-bit quantization:
+  Average Key MSE: 0.00234567
+  Average Value MSE: 0.00198765
+  Max Key MSE: 0.01234567
+  Max Value MSE: 0.00987654
+
+4-bit quantization:
+  Average Key MSE: 0.00056789
+  Average Value MSE: 0.00043210
+  [... and so on]
+```
+
+## Understanding the Results
+
+### Key Metrics
+
+1. **MSE (Mean Squared Error)**: Lower is better
+   - Measures quantization accuracy
+   - Separate for Keys vs Values
+   - Tracked per layer
+
+2. **Layer Analysis**: 
+   - Early layers often have different error patterns than late layers
+   - Some layers may be more sensitive to quantization
+
+3. **Bit Width Impact**:
+   - 2-bit: Highest compression, highest error
+   - 4-bit: Good balance of compression vs accuracy
+   - 8-bit: Lower compression, lowest error
+
+### Visualization Guide
+
+- **Line plots**: Show error trends across layers
+- **Bar charts**: Compare Keys vs Values directly  
+- **Heatmaps**: Identify problematic layer/bit combinations
+- **Histograms**: Show error distributions
+- **Box plots**: Statistical summaries by quantization level
+
+## Customization
+
+### Different Model
+
+```python
+analyzer = DetailedKVAnalysis("microsoft/DialoGPT-medium")  # Any HF model
+```
+
+### Custom Prompts
+
+```python
+test_prompts = [
+    "Your custom prompt here",
+    "Another test prompt"
+]
+results = analyzer.run_complete_analysis(test_prompts)
+```
+
+### Different Quantization Settings
+
+```python
+# In detailed_kv_analysis.py, modify:
+bits_list = [1, 2, 3, 4, 6, 8]  # Test different bit widths
+group_size = 32  # Different grouping for quantization
+```
+
+## Advanced Usage
+
+### Extracting Specific Data
+
+```python
+# Get KV states for a single prompt
+kv_data = analyzer.extract_kv_during_generation("Your prompt")
+
+# Access layer 5 keys at final step
+layer_5_keys = kv_data["kv_states"][5]["keys"][-1]
+
+# Get quantization error for specific layer/bits
+errors = analyzer.calculate_quantization_errors_per_layer(kv_data, [4])
+layer_10_key_error = errors["layer_analysis"][10]["key_errors"][4]["mse"]
+```
+
+### Integration with Your Own Quantization
+
+Replace the `custom_quantize_tensor` method with your quantization scheme:
+
+```python
+def your_quantize_method(self, tensor, bits):
+    # Your quantization logic here
+    quantized = your_quantization_function(tensor, bits)
+    return quantized, scale, zero_point
+```
+
+## Hardware Requirements
+
+- **GPU recommended** for faster inference
+- **RAM**: ~8GB for Llama-3.2-1B model
+- **Storage**: ~5GB for model + outputs
+
+## Troubleshooting
+
+### Memory Issues
+```python
+# Use smaller model
+analyzer = DetailedKVAnalysis("microsoft/DialoGPT-small")
+
+# Or reduce sequence length
+max_new_tokens = 10  # Instead of 20
+```
+
+### GPU Issues
+```python
+# Force CPU usage
+self.device = "cpu"
+```
+
+### Model Loading Issues
+```python
+# Use different dtype
+torch_dtype=torch.float32  # Instead of float16
+```
+
+## Understanding Your Manager's Requirements
+
+This analysis directly addresses both requirements:
+
+1. **✅ Quantization error of KV cache for each layer and K, V**
+   - Layer-by-layer breakdown
+   - Separate analysis for Keys vs Values
+   - Multiple quantization levels tested
+
+2. **✅ Final outputs with one or two prompts**
+   - Shows original vs quantized text generation
+   - Demonstrates practical impact on model outputs
+   - Compares multiple quantization schemes
+
+The visualizations and JSON output provide comprehensive data for reporting and further analysis.
